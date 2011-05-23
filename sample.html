@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<script src="exif.js"></script>
+		<script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+		<script>
+			var $map, $info;
+
+			window.onload = function () {
+				var $filer = document.querySelector("input[type=file]");
+				$map  = document.getElementById("map");
+				$info = document.getElementById("info");
+				$filer.onchange = upload;
+			};
+
+			function upload(e) {
+				var file   = e.target.files[0];
+				var reader = new FileReader;
+
+				reader.onload = function () {
+					var gps, f, lat, lng;
+
+					try {
+						gps = Exif.loadFromArray(reader.result).gpsifd;
+						if (typeof gps === "undefined") {
+							throw "GPS data is unavailable.";
+						} else {
+							f = function (b, a) { return a + b / 60; };
+							lat = gps.latitude.reduceRight(f)  * (gps.latitudeRef.indexOf("N") >= 0 ? 1 : -1);  //Latitude
+							lng = gps.longitude.reduceRight(f) * (gps.longitudeRef.indexOf("E") >= 0 ? 1 : -1); //Longitude
+							showMap(lat, lng);
+						}
+					} catch (e) {
+						alert(e);
+					}
+
+				};
+
+				reader.readAsArrayBuffer(file);
+			}
+
+			function showMap(lat, lng) {
+				var latlng = new google.maps.LatLng(lat, lng);
+				var mapOptions = {
+					zoom : 15,
+					center : latlng,
+					mapTypeId : google.maps.MapTypeId.ROADMAP
+				};
+				var map = new google.maps.Map($map, mapOptions);
+				var markerOptions = {
+					position : latlng,
+					map : map,
+					title : "here"
+				};
+
+				var marker = new google.maps.Marker(markerOptions);
+
+				$info.innerHTML = "Latitude:" + lat + "<br>Longitude:" + lng;
+
+			}
+		</script>
+		<title></title>
+	</head>
+	<body>
+		*.jpg<input type="file" />
+		<div id="map" style="width : 480px; height : 360px;"></div>
+		<div id="info"></div>
+	</body>
+</html>
