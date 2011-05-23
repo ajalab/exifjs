@@ -7,19 +7,19 @@ Exif = {};
     1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8
   ];
 
-  function Uint8ArrayReader(arr, endian) {
+  function BinaryReader(arr, endian) {
     this.arr = new Uint8Array(arr);
     this.endian = endian || 0;
     this.cur = 0;
     this._stack = [];
   }
 
-  Uint8ArrayReader.LITTLE_ENDIAN = 0;
-  Uint8ArrayReader.BIG_ENDIAN    = 1;
-  Uint8ArrayReader.SEEK_ABSOLUTELY = 0;
-  Uint8ArrayReader.SEEK_RELATIVELY = 1;
+  BinaryReader.LITTLE_ENDIAN = 0;
+  BinaryReader.BIG_ENDIAN    = 1;
+  BinaryReader.SEEK_ABSOLUTELY = 0;
+  BinaryReader.SEEK_RELATIVELY = 1;
 
-  Uint8ArrayReader._makeReadMethod = function (size) {
+  BinaryReader._makeReadMethod = function (size) {
     return function (endian) {
       var target;
 
@@ -28,12 +28,12 @@ Exif = {};
 
       this.cur += size;
 
-      return Uint8ArrayReader.pack(target, endian);
+      return BinaryReader.pack(target, endian);
     };
   };
 
-  Uint8ArrayReader.pack = function (arr, endian) {
-    var f = endian === Uint8ArrayReader.LITTLE_ENDIAN
+  BinaryReader.pack = function (arr, endian) {
+    var f = endian === BinaryReader.LITTLE_ENDIAN
       ? Array.prototype.reduceRight   // Little Endian
       : Array.prototype.reduce;       // Big Endian
 
@@ -42,8 +42,8 @@ Exif = {};
     }, 0);
   };
 
-  Uint8ArrayReader.pack_signed = function (arr, endian) {
-    var n = Uint8ArrayReader.pack(arr, endian);
+  BinaryReader.pack_signed = function (arr, endian) {
+    var n = BinaryReader.pack(arr, endian);
 
     if (n & (1 << arr.length * 8 - 1)) {
       n = n - (Math.pow(2, arr.length * 8)); 
@@ -52,20 +52,20 @@ Exif = {};
     return n;
   }
 
-  Uint8ArrayReader.packstr = function (arr) {
+  BinaryReader.packstr = function (arr) {
       return Array.prototype.map.call(arr, String.fromCharCode).join("");
   };
 
-  Uint8ArrayReader.prototype = {
-    constructor : Uint8ArrayReader,
+  BinaryReader.prototype = {
+    constructor : BinaryReader,
 
     setEndian : function (endian) {
       this.endian = endian;
     },
 
-    byte  : Uint8ArrayReader._makeReadMethod(2),
-    word  : Uint8ArrayReader._makeReadMethod(4),
-    dword : Uint8ArrayReader._makeReadMethod(8),
+    byte  : BinaryReader._makeReadMethod(2),
+    word  : BinaryReader._makeReadMethod(4),
+    dword : BinaryReader._makeReadMethod(8),
 
     skip  : function (size) {
       this.cur += size;
@@ -76,7 +76,7 @@ Exif = {};
       var arr = this.arr.subarray(this.cur, this.cur + size);
 
       this.cur += size;
-      return Uint8ArrayReader.packstr(arr);
+      return BinaryReader.packstr(arr);
     },
 
     getarr : function (size) {
@@ -87,7 +87,7 @@ Exif = {};
     },
 
     seek  : function (offset, type) {
-      if (type === Uint8ArrayReader.SEEK_RELATIVELY) {
+      if (type === BinaryReader.SEEK_RELATIVELY) {
         this.cur += offset;
       } else {
         //default
@@ -107,10 +107,10 @@ Exif = {};
     }
   };
 
-  Exif.loadFromArray = function (arr) {
+  Exif.loadFromArrayBuffer = function (arr) {
     var soi, app1 = {}, ifd0, subifd, gpsifd, base, endian;
 
-    var reader = new Uint8ArrayReader(arr, Uint8ArrayReader.BIG_ENDIAN);
+    var reader = new BinaryReader(arr, BinaryReader.BIG_ENDIAN);
 
     //check magic byte
     soi = reader.byte();
@@ -130,10 +130,10 @@ Exif = {};
     app1.endian = reader.byte();
 
     if (app1.endian === 0x4949) {
-      reader.setEndian(Uint8ArrayReader.LITTLE_ENDIAN);
-      endian = Uint8ArrayReader.LITTLE_ENDIAN;
+      reader.setEndian(BinaryReader.LITTLE_ENDIAN);
+      endian = BinaryReader.LITTLE_ENDIAN;
     } else {
-      endian = Uint8ArrayReader.BIG_ENDIAN;
+      endian = BinaryReader.BIG_ENDIAN;
     }
 
     app1.ifd0Offset = reader.skip(2).word(); 
@@ -186,7 +186,7 @@ Exif = {};
           case 4: //unsigned long
             entries[i].data = [];
             for (j = 0; j < entries[i].len; j++) {
-              entries[i].data[j] = Uint8ArrayReader.pack(data.subarray(j * size, (j + 1) * size));
+              entries[i].data[j] = BinaryReader.pack(data.subarray(j * size, (j + 1) * size));
             }
             entries[i].len === 1 && (entries[i].data = entries[i].data[0]);
             break;
@@ -196,21 +196,21 @@ Exif = {};
           case 9: //signed long
             entries[i].data = [];
             for (j = 0; j < entries[i].len; j++) {
-              entries[i].data[j] = Uint8ArrayReader.pack_signed(data.subarray(j * size, (j + 1) * size));
+              entries[i].data[j] = BinaryReader.pack_signed(data.subarray(j * size, (j + 1) * size));
             }
             entries[i].len === 1 && (entries[i].data = entries[i].data[0]);
             break;
 
           case 2: //ascii string
-            entries[i].data = Uint8ArrayReader.packstr(data);
+            entries[i].data = BinaryReader.packstr(data);
             break;
 
           case 5: //unsigned raditional
             entries[i].data = [];
             for (j = 0; j < entries[i].len; j++) {
               entries[i].data[j] = 
-                Uint8ArrayReader.pack(data.subarray(j * 8    , j * 8 + 4)) /
-                Uint8ArrayReader.pack(data.subarray(j * 8 + 4, j * 8 + 8))
+                BinaryReader.pack(data.subarray(j * 8    , j * 8 + 4)) /
+                BinaryReader.pack(data.subarray(j * 8 + 4, j * 8 + 8))
               ;
             }
             break;
@@ -219,8 +219,8 @@ Exif = {};
             entries[i].data = [];
             for (j = 0; j < entries[i].len; j++) {
               entries[i].data[j] = 
-                Uint8ArrayReader.pack(data.subarray(j * 8    , j * 8 + 4)) /
-                Uint8ArrayReader.pack(data.subarray(j * 8 + 4, j * 8 + 8))
+                BinaryReader.pack(data.subarray(j * 8    , j * 8 + 4)) /
+                BinaryReader.pack(data.subarray(j * 8 + 4, j * 8 + 8))
               ;
             }
             break;

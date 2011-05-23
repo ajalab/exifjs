@@ -22,7 +22,7 @@
 					var gps, f, lat, lng;
 
 					try {
-						gps = Exif.loadFromArray(reader.result).gpsifd;
+						gps = Exif.loadFromArrayBuffer(reader.result).gpsifd;
 						if (typeof gps === "undefined") {
 							throw "GPS data is unavailable.";
 						} else {

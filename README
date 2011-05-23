@@ -1,0 +1,7 @@
+exif.js
+
+何これ
+	JavaScriptでExif読む
+
+使い方
+	exif.loadFromArrayBuffer(arraybuffer);
