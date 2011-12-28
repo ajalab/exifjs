@@ -67,12 +67,12 @@ Exif = {};
     word  : BinaryReader._makeReadMethod(4),
     dword : BinaryReader._makeReadMethod(8),
 
-    skip  : function (size) {
+    skip : function (size) {
       this.cur += size;
       return this;
     },
 
-    str   : function (size) {
+    str : function (size) {
       var arr = this.arr.subarray(this.cur, this.cur + size);
 
       this.cur += size;
@@ -86,7 +86,7 @@ Exif = {};
       return ret;
     },
 
-    seek  : function (offset, type) {
+    seek : function (offset, type) {
       if (type === BinaryReader.SEEK_RELATIVELY) {
         this.cur += offset;
       } else {
@@ -101,7 +101,7 @@ Exif = {};
       return this;
     },
 
-    pop  : function () {
+    pop : function () {
       this.cur = this._stack.pop();
       return this;
     }
