@@ -53,7 +53,11 @@ Exif = {};
   }
 
   BinaryReader.packstr = function (arr) {
-      return Array.prototype.map.call(arr, String.fromCharCode).join("");
+      var res = "";
+      for (var i=0; i<arr.length; i++)
+        res += String.fromCharCode(arr[i]);
+      return res;
+      //return Array.prototype.map.call(arr, String.fromCharCode).join("");
   };
 
   BinaryReader.prototype = {
